@@ -139,8 +139,20 @@ class StockPredictor:
             # Update latest data with the new prediction for the next iteration
             latest_row = latest_data.iloc[-1].copy()
             latest_row['Close'] = predicted_price
+            
+            # Update other features based on the new predicted Close price
+            latest_row['MA50'] = latest_data['Close'].rolling(window=50).mean().iloc[-1]  # Recalculate MA50
+            latest_row['MA200'] = latest_data['Close'].rolling(window=200).mean().iloc[-1]  # Recalculate MA200
+            
+            # You may need to recalculate other indicators as needed
+            latest_row['Pct_Change'] = (latest_row['Close'] - latest_data['Close'].iloc[-1]) / latest_data['Close'].iloc[-1]
+            
+            # Append the new row to the latest data
             latest_data = pd.concat([latest_data, latest_row.to_frame().T], ignore_index=True)
-        
+
+            # Recalculate all technical indicators for the new row
+            latest_data = self._calculate_technical_indicators(latest_data)
+
         return future_predictions
 
 
