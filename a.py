@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 import datetime
 
 class StockPredictor:
@@ -81,7 +81,13 @@ class StockPredictor:
         model.fit(X_train_scaled, y_train)
 
         y_pred = model.predict(X_test_scaled)
-        print(f"Model Mean Squared Error: {mean_squared_error(y_test, y_pred):.4f}")
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = np.sqrt(mse)
+        mape = mean_absolute_percentage_error(y_test, y_pred)
+
+        print(f"Model Mean Squared Error: {mse:.4f}")
+        print(f"Model Root Mean Squared Error: {rmse:.4f}")
+        print(f"Model Mean Absolute Percentage Error: {mape:.2%}")
 
         return model, scaler
 
