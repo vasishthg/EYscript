@@ -1,49 +1,79 @@
 import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
 
-def fetch_stock_data(ticker):
-    """
-    Fetch stock data from Yahoo Finance.
-    :param ticker: str, stock ticker symbol
-    :return: tuple (market_price, eps) or None if not found
-    """
-    try:
-        stock = yf.Ticker(ticker)
-        market_price = stock.history(period="1d")['Close'].iloc[-1]  # Latest closing price
-        eps = stock.info.get('trailingEps', None)  # Earnings per share (EPS)
-        return market_price, eps
-    except Exception as e:
-        print(f"Error fetching data for {ticker}: {e}")
-        return None
+# Define an empty dictionary to store buy information
+bought_stocks = {}
 
-def calculate_pe_ratio(market_price, eps):
-    """
-    Calculate the P/E ratio.
-    :param market_price: float, market price of a single share
-    :param eps: float, earnings per share (EPS)
-    :return: float, P/E ratio
-    """
-    if eps is None or eps == 0:
-        return None  # EPS must be valid and non-zero
-    return market_price / eps
+def get_user_input():
+  """
+  Prompts user for stock information and returns a dictionary.
+  """
+  ticker = input("Enter stock ticker symbol: ")
+  date_str = input("Enter buy date (YYYY-MM-DD): ")
+  shares = int(input("Enter number of shares bought: "))
+  buy_price = float(input("Enter buy price: "))
+  return {"Ticker": ticker, "Shares": shares, "Buy Price": buy_price, "Date": date_str}
 
-def main():
-    # Define your portfolio
-    portfolio = [
-        {"ticker": "AAPL", "shares": 10},  # Example: Apple Inc.
-        {"ticker": "MSFT", "shares": 15}, # Example: Microsoft
-        {"ticker": "GOOGL", "shares": 5}, # Example: Alphabet Inc.
-    ]
+def update_bought_stocks(stock_info):
+  """
+  Updates the bought_stocks dictionary with user input.
+  """
+  bought_stocks[stock_info["Ticker"]] = stock_info
 
-    print("P/E Ratios for your portfolio:")
-    for stock in portfolio:
-        ticker = stock['ticker']
-        data = fetch_stock_data(ticker)
-        if data:
-            market_price, eps = data
-            pe_ratio = calculate_pe_ratio(market_price, eps)
-            if pe_ratio:
-                print(f"{ticker}: Market Price = ${market_price:.2f}, EPS = ${eps:.2f}, P/E Ratio = {pe_ratio:.2f}")
-            else:
-                print(f"{ticker}: EPS not available or zero; cannot calculate P/E ratio.")
-        else:
-            print(f"{ticker}: Unable to fetch data.")
+def analyze_stock(ticker, date_str):
+  """
+  Fetches data for a specific stock and buy date.
+  """
+  try:
+    stock = yf.download(ticker, start=date_str, end=date_str)["Close"].iloc[0]
+  except (KeyError, IndexError):
+    print(f"No data found for {ticker} on {date_str}.")
+    return None
+  return stock
+
+def analyze_portfolio():
+  """
+  Analyzes the bought stocks and returns a DataFrame.
+  """
+  results = []
+  for ticker, info in bought_stocks.items():
+    market_price = analyze_stock(ticker, info["Date"])
+    if market_price is None:
+      continue
+
+    eps = yf.Ticker(ticker).info.get('trailingEps', None)
+    pe_ratio = market_price / eps if eps and market_price else None
+    profit_loss = (market_price - info["Buy Price"]) * info["Shares"]
+
+    recommendation = "Hold"
+    if pe_ratio and pe_ratio < 15:
+      recommendation = "Buy - Undervalued"
+    elif pe_ratio and pe_ratio > 30:
+      recommendation = "Sell - Overvalued"
+
+    results.append({
+      **info,  # Include all info from bought_stocks
+      "Market Price": market_price,
+      "EPS": eps,
+      "P/E Ratio": pe_ratio,
+      "Profit/Loss": profit_loss,
+      "Recommendation": recommendation
+    })
+  return pd.DataFrame(results)
+
+# Rest of the code remains the same (save_results, plot_portfolio, main)
+
+if __name__ == "__main__":
+  while True:
+    choice = input("Enter 'a' to add a purchase, 'v' to view analysis, or 'q' to quit: ")
+    if choice.lower() == 'q':
+      break
+    elif choice.lower() == 'a':
+      stock_info = get_user_input()
+      update_bought_stocks(stock_info)
+    elif choice.lower() == 'v':
+      results = analyze_portfolio()
+      if results is not None:
+        print(results.to_string())  # Display analysis table
+        # Rest of the functionality for saving and plotting (optional)
