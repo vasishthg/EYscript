@@ -54,7 +54,9 @@ def preprocess_data(data):
         return df.dropna()
     return pd.DataFrame()
 
-# ... (Rest of your code, including data fetching and preprocessing)
+def add_features(df):
+    # Your implementation here
+    return df
 
 def predict_volatility_linear_regression(data):
     # Calculate daily returns
@@ -108,15 +110,6 @@ def analyze_portfolio():
             print(f"No data returned for {ticker} on {info['Date']}")
     return pd.DataFrame(results)
 
-def make_trading_decision(predicted_volatility, current_price, buy_price, stop_loss, take_profit):
-    if predicted_volatility > high_volatility_threshold:
-        return "Sell"
-    elif current_price >= take_profit:
-        return "Sell (Profit Target)"
-    elif current_price <= stop_loss:
-        return "Sell (Stop Loss)"
-    else:
-        return "Hold"
 def save_results(results):
     results.to_csv("portfolio_analysis.csv", index=False)
     print("Results saved to portfolio_analysis.csv")
@@ -137,9 +130,66 @@ def get_user_input():
 
     return {"Ticker": ticker, "Shares": shares, "Buy Price": buy_price, "Date": date_str}
 
+def predict_stock_risk(ticker):
+    data = fetch_polygon_data(ticker, '2023-01-01', '2023-12-01')
+    df = preprocess_data(data)
+    df = add_features(df)
+    
+    if df.empty:
+        print(f"No data available for {ticker}.")
+        return None
+
+    # Prepare data for model prediction
+    features = ['close', 'volume', 'Moving Average', 'Volatility']  # Ensure your features match what's used
+    X = df[features]
+    X_scaled = scaler.transform(X)  # Normalize the data
+    
+    # Make prediction using the model trained on volatility prediction
+    predicted_volatility = model.predict(X_scaled[-1].reshape(1, -1))[0]
+
+    # Classify risk based on predicted volatility
+    if predicted_volatility < 0.02:
+        risk = "Low"
+    elif predicted_volatility < 0.05:
+        risk = "Medium"
+    else:
+        risk = "High"
+    
+    return predicted_volatility, risk
+
+def make_trading_decision_based_on_risk(ticker, buy_price):
+    predicted_volatility, risk = predict_stock_risk(ticker)
+
+    if risk is None:
+        print("Could not predict risk due to missing data.")
+        return None
+
+    print(f"Predicted Volatility for {ticker}: {predicted_volatility:.4f}")
+    print(f"Risk: {risk}")
+
+    # Logic to recommend buying decision based on risk level
+    if risk == "Low":
+        recommendation = "Buy: Low Risk"
+    elif risk == "Medium":
+        recommendation = "Buy: Medium Risk"
+    elif risk == "High":
+        recommendation = "Sell: High Risk (Do not Buy)"
+    
+    return recommendation, risk
+
+def get_user_stock_recommendation():
+    ticker = input("Enter stock ticker for recommendation: ").upper()
+    buy_price = float(input("Enter buy price: "))
+    
+    decision, risk = make_trading_decision_based_on_risk(ticker, buy_price)
+
+    if decision:
+        print(f"Recommendation: {decision}")
+    else:
+        print(f"Could not provide a recommendation for {ticker}.")
 def main():
     while True:
-        choice = input("Enter 'a' to add, 'v' to view, 's' to save, 'p' to plot, 'q' to quit: ").lower()
+        choice = input("Enter 'a' to add, 'v' to view, 's' to save, 'p' to plot, 'r' to recommend, 'q' to quit: ").lower()
         if choice == 'q':
             break
         elif choice == 'a':
@@ -154,6 +204,8 @@ def main():
         elif choice == 'p':
             results = analyze_portfolio()
             plot_portfolio(results)
+        elif choice == 'r':
+            get_user_stock_recommendation()
 
 if __name__ == "__main__":
     main()
