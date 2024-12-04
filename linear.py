@@ -1,3 +1,9 @@
+# This script uses linear regression to predict stock volatility. It retrieves stock data, calculates technical indicators, and then trains a linear regression model. 
+# The script has portfolio analysis features (add to portfolio, view portfolio, save and plot portfolio performance), 
+# but the prediction part is focused on volatility. It also has an incomplete add_features function and lacks a full implementation for model deployment. 
+# Note: The trading recommendation logic seems flawed as it doesn't consider the buy price. 
+# It's also unclear how 'Moving Average', 'Volatility' are calculated before being used in the prediction.
+
 import os
 import requests
 import datetime as dt
@@ -88,7 +94,6 @@ def predict_volatility_linear_regression(data):
 
     return model
 
-# ... (Rest of your code, including model deployment and evaluation)
 # Portfolio Analysis
 def analyze_portfolio():
     results = []

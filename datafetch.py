@@ -1,3 +1,4 @@
+#fetches data from yfinance for training the model 
 import yfinance as yf
 import pandas as pd
 import datetime

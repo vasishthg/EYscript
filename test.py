@@ -1,3 +1,5 @@
+# test.py: Also trains a Random Forest model but includes cross-validation (cross_val_score) to evaluate the model's performance during training. It prints the cross-validated mean squared error (MSE) before fitting the model.
+
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor

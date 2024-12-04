@@ -1,3 +1,7 @@
+# This script is focusing on predicting the next day's closing price using a Random Forest Regressor. 
+# It calculates technical indicators, trains the model, and evaluates its performance on a test dataset.
+# It also prints the predicted and actual prices for a specific date.
+
 import yfinance as yf
 import numpy as np
 import pandas as pd
