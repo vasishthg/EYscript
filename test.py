@@ -76,7 +76,7 @@ def train_model(X, y):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    model = RandomForestRegressor(n_estimators=300, random_state=42)
+    model = RandomForestRegressor(n_estimators=200, random_state=42)
     scores = cross_val_score(model, X_scaled, y, scoring='neg_mean_squared_error', cv=5)
     print(f"Cross-validated MSE: {-np.mean(scores):.4f}")
     
@@ -97,7 +97,7 @@ def predict_next_day(model, scaler, latest_data):
 if __name__ == "__main__":
     stock_symbol = ["MSFT", "AAPL", "GOOGL", "AMZN"] 
     end_date = datetime.date(2024, 5, 3)
-    start_date = end_date - datetime.timedelta(days=3695)
+    start_date = end_date - datetime.timedelta(days=730)
     test_size = 0.2
 
     stock_data = fetch_stock_data(stock_symbol, start_date, end_date)
@@ -107,12 +107,21 @@ if __name__ == "__main__":
 
     model, scaler = train_model(X_train, y_train)
     X_test_scaled = scaler.transform(X_test)
-    latest_data = stock_data.iloc[-1:]  # Get the latest day's data (December 2nd)
+    latest_data = stock_data.iloc[-1:] 
     predicted_price = predict_next_day(model, scaler, latest_data)
 
-    stock_data['Close'] = stock_data['Close'].fillna(0)
-    actual_price = float(stock_data['Close'].iloc[-1])
+    stock_data['Close'] = stock_data['Close'].fillna(method = 'ffill')
+    try:
+        actual_price = float(stock_data['Close'].iloc[-1])
+    except ValueError:
+        print("Failed to convert 'Close' to float. Check if the last row contains valid data.")
+        actual_price = None  # Handle the case where conversion fails
 
+    if actual_price is not None:
+        print(f"Actual Price on {stock_symbol}: ${actual_price:.2f}")
+    else:
+
+        print(f"Could not retrieve a valid actual price for {stock_symbol}.")
     print(f"Predicted Price for {stock_symbol} : ${predicted_price:.2f}")
     print(f"Actual Price on  ${actual_price:.2f}")
 
