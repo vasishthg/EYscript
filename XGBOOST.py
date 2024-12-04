@@ -1,6 +1,7 @@
-# This script fetches stock data, calculates technical indicators (MA, RSI, Bollinger Bands, ATR), 
-# trains a Random Forest Regressor to predict the next day's closing price, and evaluates the model using metrics like MSE, RMSE, and MAPE. 
-# It also includes functionality to predict the next day's price and compare it to the actual price.
+# This script uses an XGBoost Classifier to predict whether the next day's closing price will be higher or lower than the current day's closing price 
+# (a binary classification problem). It includes technical indicators like moving average, volatility, EMA, momentum, and RSI. 
+# The script also has portfolio management features similar to linear.py.
+
 import os
 import requests
 import datetime as dt
