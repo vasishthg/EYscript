@@ -1,3 +1,7 @@
+'''
+This script is a simple stock price predictor that uses machine learning models to predict the next 5 days of stock prices for a given stock symbol. The script fetches historical stock data, calculates technical indicators, and trains Random Forest, XGBoost, and LSTM models to predict future stock prices. The script also provides an ensemble prediction using the three models.
+'''
+
 import yfinance as yf
 import numpy as np
 import pandas as pd

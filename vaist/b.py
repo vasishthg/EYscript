@@ -1,3 +1,9 @@
+'''
+This script is a simple stock predictor that uses historical stock data to predict future stock prices.
+It shows historical stock data, calculates technical indicators, trains a Random Forest Regressor model, and predicts future stock prices.
+It also calculates profit/loss based on the user's input for the purchase date and number of shares bought.
+'''
+
 import yfinance as yf
 import numpy as np
 import pandas as pd
