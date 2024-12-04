@@ -1,26 +1,32 @@
-import yfinance as yf
-import numpy as np
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 import datetime
 
-def fetch_stock_data(symbols, start_date, end_date):
+def load_stock_data_from_csv(filename):
     """
-    Fetch historical stock data using yfinance.
+    Load stock data from a CSV file.
     """
-    all_data = []
-    for symbol in symbols:
-        print(f"Fetching data for {symbol}...")
-        stock_data = yf.download(symbol, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
-        if not stock_data.empty:
-            stock_data['Symbol'] = symbol  # Add stock symbol for multi-stock data
-            stock_data = _calculate_technical_indicators(stock_data)
-            all_data.append(stock_data)
+    print(f"Loading data from {filename}...")
+    stock_data = pd.read_csv(filename)
+    
+    # Convert 'Date' to datetime format (if necessary)
+    stock_data['Date'] = pd.to_datetime(stock_data['Date'])
+    
+    # Separate stocks based on Symbol
+    stock_data_msft = stock_data[stock_data['Symbol'] == 'MSFT']
+    stock_data_aapl = stock_data[stock_data['Symbol'] == 'AAPL']
 
-    return pd.concat(all_data)
+    # Combine the data back if needed or process them individually
+    stock_data = pd.concat([stock_data_msft, stock_data_aapl], ignore_index=True)
+    
+    # Calculate technical indicators
+    stock_data = _calculate_technical_indicators(stock_data)
+    
+    return stock_data
 
 def _calculate_technical_indicators(data):
     """
@@ -57,7 +63,7 @@ def _calculate_technical_indicators(data):
 
     # Target for Prediction
     data['Target'] = data['Close'].shift(-1)  # Predict next day's price
-    data.dropna(inplace=True)  # Drop all rows with NaN values
+    data.fillna(method='ffill', inplace=True)  # Forward fill missing values
     return data
 
 def prepare_features(data):
@@ -95,22 +101,30 @@ def predict_next_day(model, scaler, latest_data):
     return predicted_price
 
 if __name__ == "__main__":
-    stock_symbol = ["MSFT", "AAPL", "GOOGL", "AMZN"] 
-    end_date = datetime.date(2024, 5, 3)
-    start_date = end_date - datetime.timedelta(days=730)
-    test_size = 0.2
+    # Load stock data from CSV
+    filename = "stock_data.csv"  # Update this with the actual file path
+    stock_data = load_stock_data_from_csv(filename)
 
-    stock_data = fetch_stock_data(stock_symbol, start_date, end_date)
-
+    # Prepare features and target
     X, y = prepare_features(stock_data)
+    
+    # Split data into training and testing sets
+    test_size = 0.2
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
+    # Train the model
     model, scaler = train_model(X_train, y_train)
+    
+    # Scale the test data
     X_test_scaled = scaler.transform(X_test)
-    latest_data = stock_data.iloc[-1:] 
+    
+    # Get the latest stock data for prediction
+    latest_data = stock_data.iloc[-1:]
     predicted_price = predict_next_day(model, scaler, latest_data)
 
-    stock_data['Close'] = stock_data['Close'].fillna(method = 'ffill')
+    # Fill missing values in the 'Close' column (if any)
+    stock_data['Close'] = stock_data['Close'].fillna(method='ffill')
+
     try:
         actual_price = float(stock_data['Close'].iloc[-1])
     except ValueError:
@@ -118,12 +132,11 @@ if __name__ == "__main__":
         actual_price = None  # Handle the case where conversion fails
 
     if actual_price is not None:
-        print(f"Actual Price on {stock_symbol}: ${actual_price:.2f}")
+        print(f"Actual Price: ${actual_price:.2f}")
     else:
+        print("Could not retrieve a valid actual price.")
 
-        print(f"Could not retrieve a valid actual price for {stock_symbol}.")
-    print(f"Predicted Price for {stock_symbol} : ${predicted_price:.2f}")
-    print(f"Actual Price on  ${actual_price:.2f}")
+    print(f"Predicted Price: ${predicted_price:.2f}")
 
     # Evaluate the model's performance on the test set
     y_pred = model.predict(X_test_scaled)

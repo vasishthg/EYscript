@@ -24,7 +24,7 @@ def fetch_and_save_stock_data(symbols, start_date, end_date, filename):
 
 # Example usage
 stock_symbols = ["MSFT", "AAPL"]
-start_date = datetime.date(2024, 5, 1)  # Choose your preferred start date
+start_date = datetime.date(2024, 4, 1)  # Choose your preferred start date
 end_date = datetime.date(2024, 5, 10)  # Choose your preferred end date
 
 fetch_and_save_stock_data(stock_symbols, start_date, end_date, "stock_data.csv")
